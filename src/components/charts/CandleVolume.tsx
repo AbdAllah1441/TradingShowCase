@@ -31,21 +31,21 @@ export default function CandlestickChart() {
     const chart = createChart(chartContainerRef.current, {
       autoSize: true,
       layout: {
-        background: { color: "#ffffff" },
-        textColor: "#333",
+        background: { color: "#1F1F1F" },
+        textColor: "#d1d4dc",
       },
       grid: {
-        vertLines: { color: "#f0f0f0" },
-        horzLines: { color: "#f0f0f0" },
+        vertLines: { color: "#2a2a2a" },
+        horzLines: { color: "#2a2a2a" },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
       },
       rightPriceScale: {
-        borderColor: "#d1d4dc",
+        borderColor: "#3a3a3a",
       },
       timeScale: {
-        borderColor: "#d1d4dc",
+        borderColor: "#3a3a3a",
         timeVisible: true,
         secondsVisible: false,
       },
@@ -147,28 +147,19 @@ export default function CandlestickChart() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5 bg-gradient-to-br from-[#667eea] to-[#764ba2]">
+    <div className="min-h-screen flex items-center justify-center bg-[#050505]">
       <style>{`
         #tv-attr-logo {
           display: none !important;
         }
       `}</style>
-      <div className="bg-white/95 rounded-3xl p-8 shadow-2xl max-w-6xl w-full">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          📈 OHLC Candlestick Chart
+      <div className="bg-[#050505] rounded-3xl p-8 shadow-2xl max-w-6xl w-full">
+        <h1 className="text-3xl font-bold text-gray-100 mb-2">
+          Alrajhi Bank Candlestick Chart
         </h1>
-        <p className="text-sm text-gray-600 mb-6">
-          Real-time price action with volume analysis
-        </p>
+        <p className="text-sm text-gray-400 mb-6">2010 - 2025</p>
 
-        <div className="bg-white rounded-xl p-3 mb-4">
-          <div ref={chartContainerRef} className="w-full h-[500px]" />
-        </div>
-
-        <div className="mt-5 p-4 bg-gray-50 rounded-xl text-sm text-gray-700">
-          💡 <strong>Tip:</strong> Hover over the chart to see detailed price
-          information. Green candles = price increase, red = decrease.
-        </div>
+        <div ref={chartContainerRef} className="w-full h-[500px]" />
       </div>
     </div>
   );
