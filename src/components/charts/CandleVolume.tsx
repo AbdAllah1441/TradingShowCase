@@ -216,7 +216,7 @@ export default function CandlestickChart() {
         const verticalLine = document.createElement("div");
         verticalLine.style.position = "absolute";
         verticalLine.style.width = "1px";
-        verticalLine.style.background = "#FFD700"; // golden
+        verticalLine.style.background = "#FFD700";
         verticalLine.style.bottom = "0";
         verticalLine.style.zIndex = "3";
         verticalLine.style.pointerEvents = "none";
