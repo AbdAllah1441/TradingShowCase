@@ -1,5 +1,5 @@
-import Image from "next/image";
-import CandleVolume from "../components/charts/CandleVolume";
+import CandleVolume from "@/components/charts/CandleVolume";
+import Signin from "../components/sign/Signin";
 
 export default function Home() {
   return (

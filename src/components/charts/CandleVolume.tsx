@@ -6,6 +6,7 @@ import {
   CandlestickSeries,
   HistogramSeries,
   createChart,
+  createSeriesMarkers,
 } from "lightweight-charts";
 
 interface CandleData {
@@ -23,7 +24,7 @@ interface VolumeData {
 }
 
 export default function CandlestickChart() {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -51,7 +52,6 @@ export default function CandlestickChart() {
       },
     });
 
-    // Candlestick series
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#0FEDBE",
       downColor: "#F63C6B",
@@ -61,21 +61,18 @@ export default function CandlestickChart() {
       wickDownColor: "#F63C6B",
     });
 
-    // Volume histogram series (different scale)
     const volumeSeries = chart.addSeries(HistogramSeries, {
-      priceScaleId: "volume", // separate scale at bottom
+      priceScaleId: "volume",
       priceFormat: { type: "volume" },
     });
 
-    // Minimize the volume chart to bottom 15% of the chart
-    chart.priceScale("volume").applyOptions({
+    volumeSeries.priceScale().applyOptions({
       scaleMargins: {
-        top: 0.85, // 85% margin at top
+        top: 0.85,
         bottom: 0,
       },
     });
 
-    // Load data
     const loadData = async () => {
       try {
         const response = await fetch("/data.csv");
@@ -93,17 +90,9 @@ export default function CandlestickChart() {
           const low = parseFloat(values[3]);
           const open = parseFloat(values[4]);
           const volume = parseFloat(values[5]);
-
           const timestamp = Math.floor(new Date(date).getTime() / 1000);
 
-          candles.push({
-            time: timestamp,
-            open,
-            high,
-            low,
-            close,
-          });
-
+          candles.push({ time: timestamp, open, high, low, close });
           volumes.push({
             time: timestamp,
             value: volume,
@@ -120,7 +109,7 @@ export default function CandlestickChart() {
             year: date.getUTCFullYear(),
             month: date.getUTCMonth() + 1,
             day: date.getUTCDate(),
-          };
+          } as const;
         };
 
         candleSeries.setData(
@@ -136,6 +125,162 @@ export default function CandlestickChart() {
             time: toChartTime(v.time),
           }))
         );
+
+        // Example TP / SL values
+        const takeProfitPrice = 1.03 * candles[candles.length - 1].close;
+        const stopLossPrice = candles[candles.length - 1].close * 0.99;
+
+        candleSeries.createPriceLine({
+          price: takeProfitPrice,
+          color: "#0FEDBE",
+          lineWidth: 2,
+          lineStyle: 2, // dashed
+          axisLabelVisible: true,
+          title: "Take Profit",
+        });
+
+        candleSeries.createPriceLine({
+          price: stopLossPrice,
+          color: "#F63C6B",
+          lineWidth: 2,
+          lineStyle: 2,
+          axisLabelVisible: true,
+          title: "Stop Loss",
+        });
+
+        // --- Overlay rectangle between TP and SL ---
+        const overlay = document.createElement("div");
+        overlay.style.position = "absolute";
+        overlay.style.left = "0";
+        overlay.style.right = "0";
+        overlay.style.pointerEvents = "none";
+        overlay.style.zIndex = "2";
+        overlay.style.background =
+          "linear-gradient(to bottom, rgba(15,237,190,0.10), rgba(246,60,107,0.10))";
+        chartContainerRef.current!.style.position = "relative";
+        chartContainerRef.current!.appendChild(overlay);
+
+        const updateOverlayPosition = () => {
+          const tpY = candleSeries.priceToCoordinate(takeProfitPrice);
+          const slY = candleSeries.priceToCoordinate(stopLossPrice);
+
+          if (
+            tpY == null ||
+            Number.isNaN(tpY) ||
+            slY == null ||
+            Number.isNaN(slY)
+          ) {
+            overlay.style.display = "none";
+            return;
+          }
+
+          overlay.style.display = "block";
+          const top = Math.min(tpY, slY);
+          const height = Math.abs(slY - tpY);
+          const left = chart
+            .timeScale()
+            .timeToCoordinate(toChartTime(candles[candles.length - 20].time));
+
+          overlay.style.top = `${top}px`;
+          overlay.style.left = `${left}px`;
+          overlay.style.height = `${height}px`;
+        };
+
+        updateOverlayPosition();
+
+        const timeScale = chart.timeScale();
+        timeScale.subscribeSizeChange(updateOverlayPosition);
+        timeScale.subscribeVisibleTimeRangeChange(updateOverlayPosition);
+        chart.subscribeCrosshairMove(updateOverlayPosition);
+        window.addEventListener("resize", updateOverlayPosition);
+
+        // --- Add Random Markers ---
+        createSeriesMarkers(candleSeries, [
+          {
+            time: toChartTime(candles[candles.length - 30].time),
+            position: "belowBar",
+            color: "#0FEDBE",
+            shape: "arrowUp",
+            text: "Buy",
+          },
+          {
+            time: toChartTime(candles[candles.length - 16].time),
+            position: "aboveBar",
+            color: "#F63C6B",
+            shape: "arrowDown",
+            text: "Sell",
+          },
+        ]);
+
+        // --- ADD VERTICAL LINE ---
+        const verticalLine = document.createElement("div");
+        verticalLine.style.position = "absolute";
+        verticalLine.style.width = "1px";
+        verticalLine.style.background = "#FFD700"; // golden
+        verticalLine.style.bottom = "0";
+        verticalLine.style.zIndex = "3";
+        verticalLine.style.pointerEvents = "none";
+        verticalLine.style.boxShadow = "0 0 8px rgba(255, 215, 0, 0.6)";
+        chartContainerRef.current!.appendChild(verticalLine);
+
+        // Place vertical line at a recent visible position (20 candles from end)
+        const targetTime = candles[candles.length - 20].time;
+        const targetChartTime = toChartTime(targetTime);
+
+        const updateVerticalLine = () => {
+          const x = chart.timeScale().timeToCoordinate(targetChartTime);
+          const tpY = candleSeries.priceToCoordinate(takeProfitPrice);
+
+          if (
+            x == null ||
+            Number.isNaN(x) ||
+            tpY == null ||
+            Number.isNaN(tpY)
+          ) {
+            verticalLine.style.display = "none";
+            return;
+          }
+
+          // Get container height to calculate height from bottom
+          const containerHeight = chartContainerRef.current!.offsetHeight;
+          const heightFromBottom = containerHeight - tpY;
+
+          verticalLine.style.display = "block";
+          verticalLine.style.left = `${x}px`;
+          verticalLine.style.height = `${heightFromBottom}px`;
+          console.log(
+            "Vertical line: X=",
+            x,
+            "Height from bottom=",
+            heightFromBottom
+          );
+        };
+
+        updateVerticalLine();
+
+        timeScale.subscribeVisibleTimeRangeChange(updateVerticalLine);
+        timeScale.subscribeSizeChange(updateVerticalLine);
+        chart.subscribeCrosshairMove(updateVerticalLine);
+        window.addEventListener("resize", updateVerticalLine);
+
+        // --- Cleanup ---
+        const cleanup = () => {
+          try {
+            timeScale.unsubscribeSizeChange(updateOverlayPosition);
+            timeScale.unsubscribeVisibleTimeRangeChange(updateOverlayPosition);
+          } catch {}
+          try {
+            chart.unsubscribeCrosshairMove(updateOverlayPosition);
+            chart.unsubscribeCrosshairMove(updateVerticalLine);
+          } catch {}
+          window.removeEventListener("resize", updateOverlayPosition);
+          window.removeEventListener("resize", updateVerticalLine);
+          overlay.remove();
+          verticalLine.remove();
+        };
+
+        (chart as unknown as { _overlayCleanup?: () => void })._overlayCleanup =
+          cleanup;
       } catch (error) {
         console.error("Error loading CSV:", error);
       }
@@ -143,23 +288,28 @@ export default function CandlestickChart() {
 
     loadData();
 
-    return () => chart.remove();
+    return () => {
+      try {
+        const cleanup = (chart as unknown as { _overlayCleanup?: () => void })
+          ._overlayCleanup;
+        if (typeof cleanup === "function") cleanup();
+      } catch {}
+      chart.remove();
+    };
   }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#050505]">
-      <style>{`
-        #tv-attr-logo {
-          display: none !important;
-        }
-      `}</style>
+      <style>{`#tv-attr-logo { display: none !important; }`}</style>
       <div className="bg-[#050505] rounded-3xl p-8 shadow-2xl max-w-6xl w-full">
         <h1 className="text-3xl font-bold text-gray-100 mb-2">
           Alrajhi Bank Candlestick Chart
         </h1>
         <p className="text-sm text-gray-400 mb-6">2010 - 2025</p>
-
-        <div ref={chartContainerRef} className="w-full h-[500px]" />
+        <div
+          ref={chartContainerRef}
+          className="relative w-full h-[500px] overflow-hidden"
+        />
       </div>
     </div>
   );
