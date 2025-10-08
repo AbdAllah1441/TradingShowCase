@@ -15,7 +15,7 @@ const changa = Changa({
 });
 
 export const metadata: Metadata = {
-  title: "Trading",
+  title: "AbdAllah-Trading",
   description: "Trading",
 };
 

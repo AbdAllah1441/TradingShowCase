@@ -144,34 +144,32 @@ export default function CandlestickChart() {
         overlay.style.position = "absolute";
         overlay.style.pointerEvents = "none";
         overlay.style.zIndex = "2";
-        overlay.style.background =
-          "linear-gradient(to bottom, rgba(15,237,190,0.10), rgba(246,60,107,0.10))";
         chartContainerRef.current!.style.position = "relative";
         chartContainerRef.current!.appendChild(overlay);
 
         // --- Short Take Profit line inside overlay ---
         const tpLine = document.createElement("div");
         tpLine.style.position = "absolute";
-        tpLine.style.height = "1px";
-        tpLine.style.background = "#088D25";
-        tpLine.style.boxShadow = "0 0 6px rgba(8, 141, 37, 0.6)";
+        tpLine.style.height = "0";
+        tpLine.style.borderTop = "2px dashed #088D25";
+        tpLine.style.filter = "drop-shadow(0 0 4px rgba(8, 141, 37, 0.6))";
         tpLine.style.top = "0";
         overlay.appendChild(tpLine);
 
         // --- Short Stop Loss line inside overlay ---
         const slLine = document.createElement("div");
         slLine.style.position = "absolute";
-        slLine.style.height = "1px";
-        slLine.style.background = "#E92424";
-        slLine.style.boxShadow = "0 0 6px rgba(233, 36, 36, 0.6)";
+        slLine.style.height = "0";
+        slLine.style.borderTop = "2px dashed #E92424";
+        slLine.style.filter = "drop-shadow(0 0 4px rgba(233, 36, 36, 0.6))";
         overlay.appendChild(slLine);
 
         // --- Entry Price line inside overlay ---
         const entryLine = document.createElement("div");
         entryLine.style.position = "absolute";
-        entryLine.style.height = "1px";
-        entryLine.style.background = "#00BDDD";
-        entryLine.style.boxShadow = "0 0 6px rgba(15,237,190,0.6)";
+        entryLine.style.height = "0";
+        entryLine.style.borderTop = "2px dashed #00BDDD";
+        entryLine.style.filter = "drop-shadow(0 0 4px rgba(0, 189, 221, 0.6))";
         entryLine.style.width = "100%";
         overlay.appendChild(entryLine);
 
@@ -272,6 +270,15 @@ export default function CandlestickChart() {
           const entryY = candleSeries.priceToCoordinate(entryPrice);
           if (entryY != null && !Number.isNaN(entryY)) {
             const entryOffsetFromTop = entryY - top;
+            const entryPercentage = (entryOffsetFromTop / height) * 100;
+            
+            // Sharp gradient with hard stop at entry price
+            overlay.style.background = `linear-gradient(to bottom, 
+rgba(11, 99, 81, 0.4) 0%, 
+rgba(11, 99, 81, 0.4) ${entryPercentage}%, 
+rgba(81, 19, 24, 0.4) ${entryPercentage}%, 
+rgba(81, 19, 24, 0.4) 100%)`;
+            
             entryLine.style.top = `${entryOffsetFromTop}px`;
             
             // Calculate width to extend to the right edge of the chart
@@ -342,12 +349,12 @@ export default function CandlestickChart() {
         const bottomMargin = 30;
         const verticalLine = document.createElement("div");
         verticalLine.style.position = "absolute";
-        verticalLine.style.width = "1px";
-        verticalLine.style.background = "#FFD700";
+        verticalLine.style.width = "0";
+        verticalLine.style.borderLeft = "2px dashed #FFD700";
         verticalLine.style.bottom = `${bottomMargin}px`;
         verticalLine.style.zIndex = "3";
         verticalLine.style.pointerEvents = "none";
-        verticalLine.style.boxShadow = "0 0 8px rgba(255, 215, 0, 0.6)";
+        verticalLine.style.filter = "drop-shadow(0 0 4px rgba(255, 215, 0, 0.6))";
         chartContainerRef.current!.appendChild(verticalLine);
 
         // --- ADD CIRCLE AT BOTTOM OF VERTICAL LINE ---
