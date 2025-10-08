@@ -153,8 +153,8 @@ export default function CandlestickChart() {
         const tpLine = document.createElement("div");
         tpLine.style.position = "absolute";
         tpLine.style.height = "1px";
-        tpLine.style.background = "#0FEDBE";
-        tpLine.style.boxShadow = "0 0 6px rgba(15,237,190,0.6)";
+        tpLine.style.background = "#088D25";
+        tpLine.style.boxShadow = "0 0 6px rgba(8, 141, 37, 0.6)";
         tpLine.style.top = "0";
         overlay.appendChild(tpLine);
 
@@ -162,8 +162,8 @@ export default function CandlestickChart() {
         const slLine = document.createElement("div");
         slLine.style.position = "absolute";
         slLine.style.height = "1px";
-        slLine.style.background = "#F63C6B";
-        slLine.style.boxShadow = "0 0 6px rgba(246,60,107,0.6)";
+        slLine.style.background = "#E92424";
+        slLine.style.boxShadow = "0 0 6px rgba(233, 36, 36, 0.6)";
         overlay.appendChild(slLine);
 
         // --- Entry Price line inside overlay ---
@@ -174,6 +174,21 @@ export default function CandlestickChart() {
         entryLine.style.boxShadow = "0 0 6px rgba(15,237,190,0.6)";
         entryLine.style.width = "100%";
         overlay.appendChild(entryLine);
+
+        // --- Entry Price Label at right end ---
+        const entryPriceLabel = document.createElement("div");
+        entryPriceLabel.style.position = "absolute";
+        entryPriceLabel.style.background = "rgba(0, 189, 221, 0.9)";
+        entryPriceLabel.style.color = "#1F1F1F";
+        entryPriceLabel.style.padding = "2px 8px";
+        entryPriceLabel.style.borderRadius = "4px";
+        entryPriceLabel.style.fontSize = "11px";
+        entryPriceLabel.style.fontWeight = "600";
+        entryPriceLabel.style.pointerEvents = "none";
+        entryPriceLabel.style.zIndex = "5";
+        entryPriceLabel.style.whiteSpace = "nowrap";
+        entryPriceLabel.textContent = "Entry Price: " + entryPrice.toFixed(2);
+        chartContainerRef.current!.appendChild(entryPriceLabel);
 
         // --- Take Profit Percentage Label ---
         const tpLabel = document.createElement("div");
@@ -187,7 +202,7 @@ export default function CandlestickChart() {
         tpLabel.style.pointerEvents = "none";
         tpLabel.style.zIndex = "5";
         tpLabel.style.boxShadow = "0 2px 8px rgba(15, 237, 190, 0.4)";
-        tpLabel.textContent = `TP: +${tpPercentage}%`;
+        tpLabel.textContent = `Take Profit: +${tpPercentage}%`;
         chartContainerRef.current!.appendChild(tpLabel);
 
         // --- Stop Loss Percentage Label ---
@@ -202,7 +217,7 @@ export default function CandlestickChart() {
         slLabel.style.pointerEvents = "none";
         slLabel.style.zIndex = "5";
         slLabel.style.boxShadow = "0 2px 8px rgba(246, 60, 107, 0.4)";
-        slLabel.textContent = `SL: ${slPercentage}%`;
+        slLabel.textContent = `Stop Loss: ${slPercentage}%`;
         chartContainerRef.current!.appendChild(slLabel);
 
         const updateOverlayPosition = () => {
@@ -267,6 +282,13 @@ export default function CandlestickChart() {
             
             entryLine.style.width = `${totalLineWidth}px`;
             entryLine.style.left = "0";
+
+            // Position entry price label at the right end
+            entryPriceLabel.style.display = "block";
+            entryPriceLabel.style.right = "8px";
+            entryPriceLabel.style.top = `${entryY - 10}px`;
+          } else {
+            entryPriceLabel.style.display = "none";
           }
 
           // Calculate responsive font size based on overlay width
@@ -389,6 +411,7 @@ export default function CandlestickChart() {
           circle.remove();
           tpLabel.remove();
           slLabel.remove();
+          entryPriceLabel.remove();
         };
 
         (chart as unknown as { _overlayCleanup?: () => void })._overlayCleanup =
