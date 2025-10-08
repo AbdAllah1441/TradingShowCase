@@ -127,32 +127,21 @@ export default function CandlestickChart() {
         );
 
         // Example TP / SL values
-        const takeProfitPrice = 1.03 * candles[candles.length - 1].close;
-        const stopLossPrice = candles[candles.length - 1].close * 0.99;
+        const entryPrice = candles[candles.length - 30].close;
+        const takeProfitPrice = 1.03 * entryPrice;
+        const stopLossPrice = entryPrice * 0.99;
+        
+        // Calculate TP and SL percentages
+        const tpPercentage = ((takeProfitPrice - entryPrice) / entryPrice * 100).toFixed(2);
+        const slPercentage = ((stopLossPrice - entryPrice) / entryPrice * 100).toFixed(2);
 
-        candleSeries.createPriceLine({
-          price: takeProfitPrice,
-          color: "#0FEDBE",
-          lineWidth: 2,
-          lineStyle: 2, // dashed
-          axisLabelVisible: true,
-          title: "Take Profit",
-        });
-
-        candleSeries.createPriceLine({
-          price: stopLossPrice,
-          color: "#F63C6B",
-          lineWidth: 2,
-          lineStyle: 2,
-          axisLabelVisible: true,
-          title: "Stop Loss",
-        });
+        // buy time and sell time
+        const buyTime = candles[candles.length - 30].time;
+        const sellTime = candles[candles.length - 22].time;
 
         // --- Overlay rectangle between TP and SL ---
         const overlay = document.createElement("div");
         overlay.style.position = "absolute";
-        overlay.style.left = "0";
-        overlay.style.right = "0";
         overlay.style.pointerEvents = "none";
         overlay.style.zIndex = "2";
         overlay.style.background =
@@ -160,30 +149,144 @@ export default function CandlestickChart() {
         chartContainerRef.current!.style.position = "relative";
         chartContainerRef.current!.appendChild(overlay);
 
+        // --- Short Take Profit line inside overlay ---
+        const tpLine = document.createElement("div");
+        tpLine.style.position = "absolute";
+        tpLine.style.height = "1px";
+        tpLine.style.background = "#0FEDBE";
+        tpLine.style.boxShadow = "0 0 6px rgba(15,237,190,0.6)";
+        tpLine.style.top = "0";
+        overlay.appendChild(tpLine);
+
+        // --- Short Stop Loss line inside overlay ---
+        const slLine = document.createElement("div");
+        slLine.style.position = "absolute";
+        slLine.style.height = "1px";
+        slLine.style.background = "#F63C6B";
+        slLine.style.boxShadow = "0 0 6px rgba(246,60,107,0.6)";
+        overlay.appendChild(slLine);
+
+        // --- Entry Price line inside overlay ---
+        const entryLine = document.createElement("div");
+        entryLine.style.position = "absolute";
+        entryLine.style.height = "1px";
+        entryLine.style.background = "#00BDDD";
+        entryLine.style.boxShadow = "0 0 6px rgba(15,237,190,0.6)";
+        entryLine.style.width = "100%";
+        overlay.appendChild(entryLine);
+
+        // --- Take Profit Percentage Label ---
+        const tpLabel = document.createElement("div");
+        tpLabel.style.position = "absolute";
+        tpLabel.style.background = "rgba(15, 237, 190, 0.9)";
+        tpLabel.style.color = "#1F1F1F";
+        tpLabel.style.padding = "4px 10px";
+        tpLabel.style.borderRadius = "8px";
+        tpLabel.style.fontSize = "12px";
+        tpLabel.style.fontWeight = "600";
+        tpLabel.style.pointerEvents = "none";
+        tpLabel.style.zIndex = "5";
+        tpLabel.style.boxShadow = "0 2px 8px rgba(15, 237, 190, 0.4)";
+        tpLabel.textContent = `TP: +${tpPercentage}%`;
+        chartContainerRef.current!.appendChild(tpLabel);
+
+        // --- Stop Loss Percentage Label ---
+        const slLabel = document.createElement("div");
+        slLabel.style.position = "absolute";
+        slLabel.style.background = "rgba(246, 60, 107, 0.9)";
+        slLabel.style.color = "#FFFFFF";
+        slLabel.style.padding = "4px 10px";
+        slLabel.style.borderRadius = "8px";
+        slLabel.style.fontSize = "12px";
+        slLabel.style.fontWeight = "600";
+        slLabel.style.pointerEvents = "none";
+        slLabel.style.zIndex = "5";
+        slLabel.style.boxShadow = "0 2px 8px rgba(246, 60, 107, 0.4)";
+        slLabel.textContent = `SL: ${slPercentage}%`;
+        chartContainerRef.current!.appendChild(slLabel);
+
         const updateOverlayPosition = () => {
           const tpY = candleSeries.priceToCoordinate(takeProfitPrice);
           const slY = candleSeries.priceToCoordinate(stopLossPrice);
 
           if (
             tpY == null ||
-            Number.isNaN(tpY) ||
             slY == null ||
+            Number.isNaN(tpY) ||
             Number.isNaN(slY)
           ) {
             overlay.style.display = "none";
+            tpLabel.style.display = "none";
+            slLabel.style.display = "none";
             return;
           }
 
           overlay.style.display = "block";
+          tpLabel.style.display = "block";
+          slLabel.style.display = "block";
+
+          // Position overlay between TP and SL
           const top = Math.min(tpY, slY);
           const height = Math.abs(slY - tpY);
-          const left = chart
+
+          // Overlay spans from buy time to sell time
+          const startX = chart
             .timeScale()
-            .timeToCoordinate(toChartTime(candles[candles.length - 20].time));
+            .timeToCoordinate(toChartTime(buyTime));
+          const endX = chart
+            .timeScale()
+            .timeToCoordinate(toChartTime(sellTime));
+
+          if (startX == null || endX == null) return;
+
+          const left = Math.min(startX, endX);
+          const width = Math.abs(endX - startX);
 
           overlay.style.top = `${top}px`;
           overlay.style.left = `${left}px`;
+          overlay.style.width = `${width}px`;
           overlay.style.height = `${height}px`;
+
+          // Update short TP and SL lines within overlay
+          tpLine.style.width = "100%";
+          slLine.style.width = "100%";
+          tpLine.style.top = "0";
+          slLine.style.bottom = "0";
+
+          // Position entry price line within overlay and extend to chart's right edge
+          const entryY = candleSeries.priceToCoordinate(entryPrice);
+          if (entryY != null && !Number.isNaN(entryY)) {
+            const entryOffsetFromTop = entryY - top;
+            entryLine.style.top = `${entryOffsetFromTop}px`;
+            
+            // Calculate width to extend to the right edge of the chart
+            const containerWidth = chartContainerRef.current!.offsetWidth;
+            const overlayRight = left + width;
+            const extensionWidth = containerWidth - overlayRight;
+            const totalLineWidth = width + extensionWidth;
+            
+            entryLine.style.width = `${totalLineWidth}px`;
+            entryLine.style.left = "0";
+          }
+
+          // Calculate responsive font size based on overlay width
+          const minFontSize = 10;
+          const maxFontSize = 14;
+          const fontSize = Math.max(minFontSize, Math.min(maxFontSize, width / 25));
+          
+          // Update TP label size and position (centered above overlay)
+          tpLabel.style.fontSize = `${fontSize}px`;
+          tpLabel.style.padding = `${fontSize * 0.4}px ${fontSize * 1}px`;
+          tpLabel.style.left = `${left + width / 2}px`;
+          tpLabel.style.top = `${top - (fontSize * 2.5)}px`;
+          tpLabel.style.transform = "translateX(-50%)"; // Center horizontally
+
+          // Update SL label size and position (centered below overlay)
+          slLabel.style.fontSize = `${fontSize}px`;
+          slLabel.style.padding = `${fontSize * 0.4}px ${fontSize * 1}px`;
+          slLabel.style.left = `${left + width / 2}px`;
+          slLabel.style.top = `${top + height + (fontSize * 0.5)}px`;
+          slLabel.style.transform = "translateX(-50%)"; // Center horizontally
         };
 
         updateOverlayPosition();
@@ -195,16 +298,17 @@ export default function CandlestickChart() {
         window.addEventListener("resize", updateOverlayPosition);
 
         // --- Add Random Markers ---
+
         createSeriesMarkers(candleSeries, [
           {
-            time: toChartTime(candles[candles.length - 30].time),
+            time: toChartTime(buyTime),
             position: "belowBar",
             color: "#0FEDBE",
             shape: "arrowUp",
             text: "Buy",
           },
           {
-            time: toChartTime(candles[candles.length - 16].time),
+            time: toChartTime(sellTime),
             position: "aboveBar",
             color: "#F63C6B",
             shape: "arrowDown",
@@ -213,47 +317,52 @@ export default function CandlestickChart() {
         ]);
 
         // --- ADD VERTICAL LINE ---
+        const bottomMargin = 30;
         const verticalLine = document.createElement("div");
         verticalLine.style.position = "absolute";
         verticalLine.style.width = "1px";
         verticalLine.style.background = "#FFD700";
-        verticalLine.style.bottom = "0";
+        verticalLine.style.bottom = `${bottomMargin}px`;
         verticalLine.style.zIndex = "3";
         verticalLine.style.pointerEvents = "none";
         verticalLine.style.boxShadow = "0 0 8px rgba(255, 215, 0, 0.6)";
         chartContainerRef.current!.appendChild(verticalLine);
 
-        // Place vertical line at a recent visible position (20 candles from end)
-        const targetTime = candles[candles.length - 20].time;
-        const targetChartTime = toChartTime(targetTime);
+        // --- ADD CIRCLE AT BOTTOM OF VERTICAL LINE ---
+        const circle = document.createElement("div");
+        circle.style.position = "absolute";
+        circle.style.width = "16px";
+        circle.style.height = "16px";
+        circle.style.borderRadius = "50%";
+        circle.style.background = "#FFD700";
+        circle.style.bottom = `${bottomMargin}px`;
+        circle.style.zIndex = "4";
+        circle.style.pointerEvents = "none";
+        circle.style.boxShadow = "0 0 8px rgba(255, 215, 0, 0.8)";
+        circle.style.transform = "translateX(-50%)";
+        chartContainerRef.current!.appendChild(circle);
+
+        const targetChartTime = toChartTime(buyTime);
 
         const updateVerticalLine = () => {
           const x = chart.timeScale().timeToCoordinate(targetChartTime);
-          const tpY = candleSeries.priceToCoordinate(takeProfitPrice);
+          const tpY = candleSeries.priceToCoordinate(entryPrice);
 
-          if (
-            x == null ||
-            Number.isNaN(x) ||
-            tpY == null ||
-            Number.isNaN(tpY)
-          ) {
+          if (x == null || tpY == null || Number.isNaN(x) || Number.isNaN(tpY)) {
             verticalLine.style.display = "none";
+            circle.style.display = "none";
             return;
           }
 
-          // Get container height to calculate height from bottom
           const containerHeight = chartContainerRef.current!.offsetHeight;
-          const heightFromBottom = containerHeight - tpY;
+          const heightFromBottom = containerHeight - tpY - bottomMargin;
 
           verticalLine.style.display = "block";
           verticalLine.style.left = `${x}px`;
           verticalLine.style.height = `${heightFromBottom}px`;
-          console.log(
-            "Vertical line: X=",
-            x,
-            "Height from bottom=",
-            heightFromBottom
-          );
+
+          circle.style.display = "block";
+          circle.style.left = `${x}px`;
         };
 
         updateVerticalLine();
@@ -277,6 +386,9 @@ export default function CandlestickChart() {
           window.removeEventListener("resize", updateVerticalLine);
           overlay.remove();
           verticalLine.remove();
+          circle.remove();
+          tpLabel.remove();
+          slLabel.remove();
         };
 
         (chart as unknown as { _overlayCleanup?: () => void })._overlayCleanup =
