@@ -508,7 +508,7 @@ rgba(81, 19, 24, 0.4) 100%)`;
               </p>
               <button
                 onClick={() => setShowPopup(false)}
-                className="bg-white text-green-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors pointer"
+                className="bg-white text-green-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 Thank You! 😊
               </button>
