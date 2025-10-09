@@ -1,9 +1,9 @@
-import CandleVolume from "@/components/charts/CandleVolume";
+import AnimateTrade from "@/components/charts/AnimateTrade";
 
 export default function Home() {
   return (
     <>
-      <CandleVolume />
+      <AnimateTrade />
     </>
   );
 }
