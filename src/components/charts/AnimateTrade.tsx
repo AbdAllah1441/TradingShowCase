@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   CrosshairMode,
   CandlestickSeries,
@@ -25,16 +25,6 @@ interface VolumeData {
 
 export default function CandlestickChart() {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
-  const [showPopup, setShowPopup] = useState(false);
-
-  // Show congratulations popup after 6 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowPopup(true);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -487,35 +477,6 @@ rgba(81, 19, 24, 0.4) 100%)`;
           className="relative w-full h-[500px] overflow-hidden"
         />
       </div>
-
-      {/* Congratulations Popup */}
-      {showPopup && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setShowPopup(false)}
-        >
-          <div 
-            className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-2xl p-8 shadow-2xl max-w-md mx-4 transform animate-bounce"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-3xl font-bold text-white mb-4">
-                Congratulations!
-              </h2>
-              <p className="text-xl text-white mb-6">
-                Mr. Essam, you are lucky to have such a developer!
-              </p>
-              <button
-                onClick={() => setShowPopup(false)}
-                className="bg-white text-green-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-              >
-                Thank You! 😊
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
